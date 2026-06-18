@@ -39,17 +39,32 @@ def save_store(store):
 def load_vapid_keys():
     ensure_data_dir()
     if VAPID_PATH.exists():
-        return json.loads(VAPID_PATH.read_text(encoding="utf-8"))
+        keys = json.loads(VAPID_PATH.read_text(encoding="utf-8"))
+        if keys.get("privateKey", "").startswith("-----BEGIN"):
+            from cryptography.hazmat.primitives import serialization
+
+            private_key = serialization.load_pem_private_key(
+                keys["privateKey"].encode("utf-8"),
+                password=None,
+            )
+            private_der = private_key.private_bytes(
+                encoding=serialization.Encoding.DER,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+            keys["privateKey"] = b64url(private_der)
+            VAPID_PATH.write_text(json.dumps(keys, indent=2), encoding="utf-8")
+        return keys
 
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric import ec
 
     private_key = ec.generate_private_key(ec.SECP256R1())
-    private_pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM,
+    private_der = private_key.private_bytes(
+        encoding=serialization.Encoding.DER,
         format=serialization.PrivateFormat.PKCS8,
         encryption_algorithm=serialization.NoEncryption(),
-    ).decode("utf-8")
+    )
     public_numbers = private_key.public_key().public_numbers()
     public_raw = (
         b"\x04"
@@ -58,7 +73,7 @@ def load_vapid_keys():
     )
     keys = {
         "publicKey": b64url(public_raw),
-        "privateKey": private_pem,
+        "privateKey": b64url(private_der),
     }
     VAPID_PATH.write_text(json.dumps(keys, indent=2), encoding="utf-8")
     return keys
@@ -158,12 +173,18 @@ def schedule_loop(stop_event):
                 continue
 
             if minute == int(schedule.get("reminderMinute", -1)) and record.get("lastReminderKey") != hour_key:
-                send_push(record, build_reminder_payload(schedule))
+                try:
+                    send_push(record, build_reminder_payload(schedule))
+                except Exception as error:
+                    print(f"Scheduled reminder push failed: {error}", flush=True)
                 record["lastReminderKey"] = hour_key
                 changed = True
 
             if minute == int(schedule.get("reflectionMinute", -1)) and record.get("lastReflectionKey") != hour_key:
-                send_push(record, build_reflection_payload())
+                try:
+                    send_push(record, build_reflection_payload())
+                except Exception as error:
+                    print(f"Scheduled reflection push failed: {error}", flush=True)
                 record["lastReflectionKey"] = hour_key
                 changed = True
 

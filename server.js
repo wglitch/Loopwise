@@ -4,10 +4,20 @@ const path = require("path");
 const webpush = require("web-push");
 
 const PORT = Number(process.env.PORT || 8787);
+const HOST = process.env.HOST || "127.0.0.1";
 const DATA_DIR = path.join(__dirname, "data");
 const STORE_PATH = path.join(DATA_DIR, "push-store.json");
 const VAPID_PATH = path.join(DATA_DIR, "vapid.json");
 const CONTACT_EMAIL = process.env.CONTACT_EMAIL || "mailto:loopwise@example.com";
+const STATIC_TYPES = {
+  ".css": "text/css; charset=utf-8",
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".json": "application/json; charset=utf-8",
+  ".png": "image/png",
+  ".svg": "image/svg+xml; charset=utf-8",
+  ".webmanifest": "application/manifest+json; charset=utf-8"
+};
 
 ensureDataDir();
 const vapidKeys = loadVapidKeys();
@@ -23,34 +33,41 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    if (req.method === "GET" && req.url === "/health") {
+    const url = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+
+    if (req.method === "GET" && url.pathname === "/health") {
       sendJson(res, 200, { ok: true });
       return;
     }
 
-    if (req.method === "GET" && req.url === "/vapid-public-key") {
+    if (req.method === "GET" && url.pathname === "/vapid-public-key") {
       sendJson(res, 200, { publicKey: vapidKeys.publicKey });
       return;
     }
 
-    if (req.method === "POST" && req.url === "/subscribe") {
+    if (req.method === "POST" && url.pathname === "/subscribe") {
       const body = await readJson(req);
       upsertSubscription(body.subscription, body.schedule);
       sendJson(res, 200, { ok: true });
       return;
     }
 
-    if (req.method === "POST" && req.url === "/schedule") {
+    if (req.method === "POST" && url.pathname === "/schedule") {
       const body = await readJson(req);
       upsertSubscription(body.subscription, body.schedule);
       sendJson(res, 200, { ok: true });
       return;
     }
 
-    if (req.method === "POST" && req.url === "/push/test") {
+    if (req.method === "POST" && url.pathname === "/push/test") {
       const body = await readJson(req);
       const result = await sendToAll(buildReminderPayload(body));
       sendJson(res, 200, { ok: true, sent: result.sent, failed: result.failed });
+      return;
+    }
+
+    if (req.method === "GET") {
+      serveStatic(url.pathname, res);
       return;
     }
 
@@ -61,8 +78,8 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`Loopwise pushserver lyssnar på http://localhost:${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`Loopwise server lyssnar på http://${HOST}:${PORT}`);
 });
 
 setInterval(runSchedule, 20 * 1000);
@@ -200,6 +217,39 @@ function readJson(req) {
 function sendJson(res, status, payload) {
   res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
   res.end(JSON.stringify(payload));
+}
+
+function serveStatic(requestPath, res) {
+  const cleanPath = decodeURIComponent(requestPath.split("?")[0]);
+  const relativePath = cleanPath === "/" ? "index.html" : cleanPath.replace(/^\/+/, "");
+  const filePath = path.resolve(__dirname, relativePath);
+
+  if (!filePath.startsWith(__dirname)) {
+    sendJson(res, 403, { error: "Forbidden" });
+    return;
+  }
+
+  fs.readFile(filePath, (error, data) => {
+    if (error) {
+      if (path.extname(filePath)) {
+        sendJson(res, 404, { error: "Not found" });
+        return;
+      }
+      fs.readFile(path.join(__dirname, "index.html"), (fallbackError, fallbackData) => {
+        if (fallbackError) {
+          sendJson(res, 404, { error: "Not found" });
+          return;
+        }
+        res.writeHead(200, { "Content-Type": STATIC_TYPES[".html"] });
+        res.end(fallbackData);
+      });
+      return;
+    }
+
+    const contentType = STATIC_TYPES[path.extname(filePath)] || "application/octet-stream";
+    res.writeHead(200, { "Content-Type": contentType });
+    res.end(data);
+  });
 }
 
 function setCorsHeaders(res) {

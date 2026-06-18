@@ -53,11 +53,12 @@ Starta en statisk server i projektroten:
 python -m http.server 4173 --bind 127.0.0.1
 ```
 
-Starta pushservern separat:
+Starta den kombinerade webb- och pushservern separat:
 
 ```powershell
-npm install
-npm run push-server
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe server.py --host 127.0.0.1 --port 8004
 ```
 
 För riktig mobilpush krävs HTTPS och att appen når pushservern via samma dator eller publik domän.

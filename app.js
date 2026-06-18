@@ -1,6 +1,6 @@
 const DB_NAME = "loopwise";
 const DB_VERSION = 1;
-const DEFAULT_PUSH_SERVER = "";
+const DEFAULT_PUSH_SERVER = deriveDefaultPushServer();
 
 const state = {
   db: null,
@@ -429,6 +429,12 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function deriveDefaultPushServer() {
+  const pathParts = window.location.pathname.split("/").filter(Boolean);
+  const firstSegment = pathParts.length ? `/${pathParts[0]}` : "";
+  return `${window.location.origin}${firstSegment}`;
 }
 
 function toast(message) {

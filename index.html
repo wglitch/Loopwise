@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#f6f3eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Loopwise">
+    <title>Loopwise</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Loopwise</p>
+          <h1>En sak att komma ihåg.</h1>
+        </div>
+        <span class="status-pill" id="connectionStatus">Laddar</span>
+      </header>
+
+      <section class="panel active-session" id="activeSessionPanel" hidden>
+        <p class="section-kicker">Aktiv session</p>
+        <h2 id="activeFocus">Dagens fokus</h2>
+        <p class="adjustment-label">Senaste justering</p>
+        <p class="adjustment-text" id="activeAdjustment">Ingen justering än.</p>
+        <div class="quick-actions">
+          <button class="secondary" id="reflectNowButton" type="button">Reflektera nu</button>
+          <button class="secondary" id="remindNowButton" type="button">Påminn mig</button>
+        </div>
+      </section>
+
+      <section class="panel" id="startPanel">
+        <form id="sessionForm">
+          <div class="field">
+            <label for="focusInput">Dagens fokus</label>
+            <textarea id="focusInput" rows="3" maxlength="180" required placeholder="Ask one more follow-up question."></textarea>
+          </div>
+
+          <div class="field">
+            <label for="categoryInput">Kategori</label>
+            <select id="categoryInput">
+              <option>Journalistik</option>
+              <option>Löpning</option>
+              <option>Klättring</option>
+              <option>Gym</option>
+              <option>Ledarskap</option>
+              <option>Undervisning</option>
+              <option>Egen</option>
+            </select>
+          </div>
+
+          <div class="time-grid">
+            <div class="field">
+              <label for="reminderMinute">Påminn varje timme vid minut</label>
+              <input id="reminderMinute" type="number" min="0" max="59" value="10" inputmode="numeric">
+            </div>
+            <div class="field">
+              <label for="reflectionMinute">Reflektera varje timme vid minut</label>
+              <input id="reflectionMinute" type="number" min="0" max="59" value="50" inputmode="numeric">
+            </div>
+          </div>
+
+          <button class="primary" type="submit">Starta session</button>
+        </form>
+      </section>
+
+      <section class="panel reflection-panel" id="reflectionPanel" hidden>
+        <form id="reflectionForm">
+          <p class="section-kicker">Snabb reflektion</p>
+          <div class="field">
+            <label for="workedInput">Vad fungerade bra?</label>
+            <textarea id="workedInput" rows="3" maxlength="220" required></textarea>
+          </div>
+          <div class="field">
+            <label for="differentInput">Vad kan jag göra annorlunda nästa gång?</label>
+            <textarea id="differentInput" rows="3" maxlength="220" required></textarea>
+          </div>
+          <button class="primary" type="submit">Spara justering</button>
+        </form>
+      </section>
+
+      <section class="panel" id="endPanel" hidden>
+        <form id="lessonForm">
+          <p class="section-kicker">Avsluta session</p>
+          <div class="field">
+            <label for="lessonInput">Vad är dagens viktigaste lärdom?</label>
+            <textarea id="lessonInput" rows="4" maxlength="320" required></textarea>
+          </div>
+          <button class="primary" type="submit">Spara lärdom</button>
+        </form>
+      </section>
+
+      <section class="panel archive-panel">
+        <div class="section-header">
+          <div>
+            <p class="section-kicker">Arkiv</p>
+            <h2>Lärdomar</h2>
+          </div>
+          <button class="text-button" id="endSessionButton" type="button" hidden>Avsluta</button>
+        </div>
+        <ol class="lesson-list" id="lessonList"></ol>
+      </section>
+
+      <section class="panel settings-panel">
+        <details>
+          <summary>Pushinställningar</summary>
+          <div class="field">
+            <label for="pushServerInput">Pushserver</label>
+            <input id="pushServerInput" type="url" placeholder="https://loopwise.example.com">
+          </div>
+          <div class="quick-actions">
+            <button class="secondary" id="enablePushButton" type="button">Aktivera push</button>
+            <button class="secondary" id="testPushButton" type="button">Testpush</button>
+          </div>
+          <p class="hint" id="pushStatus">Push är inte aktiverat.</p>
+        </details>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js" defer></script>
+  </body>
+</html>

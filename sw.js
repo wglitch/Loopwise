@@ -1,4 +1,4 @@
-const CACHE_NAME = "loopwise-v1";
+const CACHE_NAME = "loopwise-v2";
 const APP_SHELL = [
   ".",
   "index.html",

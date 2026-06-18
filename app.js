@@ -41,6 +41,9 @@ async function init() {
   state.db = await openDb();
   await registerServiceWorker();
   state.settings = { ...state.settings, ...(await getSetting("settings")) };
+  if (!state.settings.pushServerUrl) {
+    state.settings.pushServerUrl = DEFAULT_PUSH_SERVER;
+  }
   els.pushServerInput.value = state.settings.pushServerUrl || "";
   state.activeSession = await getActiveSession();
   state.lessons = await getAll("lessons");

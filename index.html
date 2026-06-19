@@ -22,92 +22,90 @@
         <span class="status-pill" id="connectionStatus">Laddar</span>
       </header>
 
-      <section class="panel active-session" id="activeSessionPanel" hidden>
-        <p class="section-kicker">Aktiv session</p>
-        <h2 id="activeFocus">Dagens fokus</h2>
-        <p class="adjustment-label">Senaste justering</p>
-        <p class="adjustment-text" id="activeAdjustment">Ingen justering än.</p>
-        <div class="quick-actions">
-          <button class="secondary" id="reflectNowButton" type="button">Reflektera nu</button>
-          <button class="secondary" id="remindNowButton" type="button">Påminn mig</button>
-        </div>
-      </section>
+      <nav class="page-nav" aria-label="Vyer">
+        <button class="nav-button active" type="button" data-page-button="session">Session</button>
+        <button class="nav-button" type="button" data-page-button="archive">Arkiv</button>
+        <button class="nav-button" type="button" data-page-button="settings">Inställningar</button>
+      </nav>
 
-      <section class="panel" id="startPanel">
-        <form id="sessionForm">
-          <div class="field">
-            <label for="focusInput">Dagens fokus</label>
-            <textarea id="focusInput" rows="3" maxlength="180" required placeholder="Ask one more follow-up question."></textarea>
+      <section class="page active" id="sessionPage" data-page="session">
+        <section class="panel active-session" id="activeSessionPanel" hidden>
+          <p class="section-kicker">Aktiv session</p>
+          <h2 id="activeFocus">Dagens fokus</h2>
+          <p class="adjustment-label">Senaste lärdomen</p>
+          <p class="adjustment-text" id="activeAdjustment">Ingen lärdom än.</p>
+          <div class="quick-actions">
+            <button class="secondary" id="reflectNowButton" type="button">Reflektera</button>
+            <button class="secondary" id="remindNowButton" type="button">Påminn</button>
+            <button class="secondary" id="endSessionButton" type="button" hidden>Avsluta</button>
           </div>
+        </section>
 
-          <div class="field">
-            <label for="categoryInput">Kategori</label>
-            <select id="categoryInput">
-              <option>Journalistik</option>
-              <option>Löpning</option>
-              <option>Klättring</option>
-              <option>Gym</option>
-              <option>Ledarskap</option>
-              <option>Undervisning</option>
-              <option>Egen</option>
-            </select>
-          </div>
-
-          <div class="time-grid">
+        <section class="panel" id="startPanel">
+          <form id="sessionForm">
             <div class="field">
-              <label for="reminderMinute">Påminn varje timme vid minut</label>
-              <input id="reminderMinute" type="number" min="0" max="59" value="10" inputmode="numeric">
+              <label for="focusInput">Dagens fokus</label>
+              <textarea id="focusInput" rows="3" maxlength="180" required placeholder="Ask one more follow-up question."></textarea>
+            </div>
+
+            <div class="time-grid">
+              <div class="field">
+                <label for="reminderMinute">Påminn varje timme vid minut</label>
+                <input id="reminderMinute" type="number" min="0" max="59" value="10" inputmode="numeric">
+              </div>
+              <div class="field">
+                <label for="reflectionMinute">Reflektera varje timme vid minut</label>
+                <input id="reflectionMinute" type="number" min="0" max="59" value="50" inputmode="numeric">
+              </div>
+            </div>
+
+            <button class="primary" type="submit">Starta session</button>
+          </form>
+        </section>
+
+        <section class="panel reflection-panel" id="reflectionPanel" hidden>
+          <form id="reflectionForm">
+            <p class="section-kicker">Snabb reflektion</p>
+            <div class="field">
+              <label for="workedInput">Vad fungerade bra?</label>
+              <textarea id="workedInput" rows="3" maxlength="220" required></textarea>
             </div>
             <div class="field">
-              <label for="reflectionMinute">Reflektera varje timme vid minut</label>
-              <input id="reflectionMinute" type="number" min="0" max="59" value="50" inputmode="numeric">
+              <label for="differentInput">Vad kan jag göra annorlunda nästa gång?</label>
+              <textarea id="differentInput" rows="3" maxlength="220" required></textarea>
+            </div>
+            <button class="primary" type="submit">Spara lärdom</button>
+          </form>
+        </section>
+
+        <section class="panel" id="endPanel" hidden>
+          <form id="lessonForm">
+            <p class="section-kicker">Avsluta session</p>
+            <div class="field">
+              <label for="lessonInput">Vad är dagens viktigaste lärdom?</label>
+              <textarea id="lessonInput" rows="4" maxlength="320" required></textarea>
+            </div>
+            <button class="primary" type="submit">Spara lärdom</button>
+          </form>
+        </section>
+      </section>
+
+      <section class="page" id="archivePage" data-page="archive" hidden>
+        <section class="panel archive-panel">
+          <div class="section-header">
+            <div>
+              <p class="section-kicker">Arkiv</p>
+              <h2>Lärdomar</h2>
             </div>
           </div>
-
-          <button class="primary" type="submit">Starta session</button>
-        </form>
+          <ol class="lesson-list" id="lessonList"></ol>
+        </section>
       </section>
 
-      <section class="panel reflection-panel" id="reflectionPanel" hidden>
-        <form id="reflectionForm">
-          <p class="section-kicker">Snabb reflektion</p>
-          <div class="field">
-            <label for="workedInput">Vad fungerade bra?</label>
-            <textarea id="workedInput" rows="3" maxlength="220" required></textarea>
-          </div>
-          <div class="field">
-            <label for="differentInput">Vad kan jag göra annorlunda nästa gång?</label>
-            <textarea id="differentInput" rows="3" maxlength="220" required></textarea>
-          </div>
-          <button class="primary" type="submit">Spara justering</button>
-        </form>
-      </section>
-
-      <section class="panel" id="endPanel" hidden>
-        <form id="lessonForm">
-          <p class="section-kicker">Avsluta session</p>
-          <div class="field">
-            <label for="lessonInput">Vad är dagens viktigaste lärdom?</label>
-            <textarea id="lessonInput" rows="4" maxlength="320" required></textarea>
-          </div>
-          <button class="primary" type="submit">Spara lärdom</button>
-        </form>
-      </section>
-
-      <section class="panel archive-panel">
-        <div class="section-header">
-          <div>
-            <p class="section-kicker">Arkiv</p>
-            <h2>Lärdomar</h2>
-          </div>
-          <button class="text-button" id="endSessionButton" type="button" hidden>Avsluta</button>
-        </div>
-        <ol class="lesson-list" id="lessonList"></ol>
-      </section>
-
-      <section class="panel settings-panel">
-        <details>
-          <summary>Pushinställningar</summary>
+      <section class="page" id="settingsPage" data-page="settings" hidden>
+        <section class="panel settings-panel">
+          <p class="section-kicker">Inställningar</p>
+          <h2>Push</h2>
           <div class="field">
             <label for="pushServerInput">Pushserver</label>
             <input id="pushServerInput" type="url" placeholder="https://loopwise.example.com">
@@ -117,7 +115,7 @@
             <button class="secondary" id="testPushButton" type="button">Testpush</button>
           </div>
           <p class="hint" id="pushStatus">Push är inte aktiverat.</p>
-        </details>
+        </section>
       </section>
     </main>
 

@@ -92,6 +92,35 @@ h2 {
   text-align: center;
 }
 
+.page-nav {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 6px 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.nav-button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.nav-button.active {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.page {
+  display: block;
+}
+
 .panel {
   margin-top: 14px;
   border: 1px solid var(--line);
@@ -167,7 +196,7 @@ textarea {
 }
 
 .quick-actions {
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
   margin-top: 16px;
 }
 

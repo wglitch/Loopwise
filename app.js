@@ -32,6 +32,8 @@ const els = {
   testPushButton: document.querySelector("#testPushButton"),
   pushServerInput: document.querySelector("#pushServerInput"),
   pushStatus: document.querySelector("#pushStatus"),
+  pageButtons: document.querySelectorAll("[data-page-button]"),
+  pages: document.querySelectorAll("[data-page]"),
   toast: document.querySelector("#toast")
 };
 
@@ -68,6 +70,9 @@ function bindEvents() {
   els.enablePushButton.addEventListener("click", enablePush);
   els.testPushButton.addEventListener("click", sendTestPush);
   els.pushServerInput.addEventListener("change", savePushServer);
+  els.pageButtons.forEach((button) => {
+    button.addEventListener("click", () => showPage(button.dataset.pageButton));
+  });
 }
 
 function openDb() {
@@ -139,7 +144,6 @@ async function startSession(event) {
   const session = {
     id: crypto.randomUUID(),
     focus: document.querySelector("#focusInput").value.trim(),
-    category: document.querySelector("#categoryInput").value,
     reminderMinute: clampMinute(document.querySelector("#reminderMinute").value),
     reflectionMinute: clampMinute(document.querySelector("#reflectionMinute").value),
     lastAdjustment: "",
@@ -153,6 +157,7 @@ async function startSession(event) {
   document.querySelector("#reminderMinute").value = session.reminderMinute;
   document.querySelector("#reflectionMinute").value = session.reflectionMinute;
   render();
+  showPage("session");
   await syncPushSchedule();
   toast("Session startad.");
 }
@@ -176,7 +181,7 @@ async function saveReflection(event) {
   els.reflectionPanel.hidden = true;
   render();
   await syncPushSchedule();
-  toast("Justeringen är sparad.");
+  toast("Lärdomen är sparad.");
 }
 
 async function saveLesson(event) {
@@ -187,7 +192,6 @@ async function saveLesson(event) {
     id: crypto.randomUUID(),
     sessionId: state.activeSession.id,
     focus: state.activeSession.focus,
-    category: state.activeSession.category,
     lesson: document.querySelector("#lessonInput").value.trim(),
     createdAt: new Date().toISOString()
   };
@@ -200,6 +204,7 @@ async function saveLesson(event) {
   els.lessonForm.reset();
   els.endPanel.hidden = true;
   render();
+  showPage("archive");
   await syncPushSchedule();
   toast("Lärdomen är sparad.");
 }
@@ -213,7 +218,7 @@ function render() {
 
   if (hasSession) {
     els.activeFocus.textContent = state.activeSession.focus;
-    els.activeAdjustment.textContent = state.activeSession.lastAdjustment || "Ingen justering än.";
+    els.activeAdjustment.textContent = state.activeSession.lastAdjustment || "Ingen lärdom än.";
   }
 
   const lessons = [...state.lessons].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -230,7 +235,7 @@ function renderLesson(lesson) {
     timeStyle: "short"
   }).format(new Date(lesson.createdAt));
 
-  return `<li><time>${escapeHtml(date)} · ${escapeHtml(lesson.category)}</time><span>${escapeHtml(lesson.lesson)}</span></li>`;
+  return `<li><time>${escapeHtml(date)}</time><span>${escapeHtml(lesson.lesson)}</span></li>`;
 }
 
 function showReflection() {
@@ -281,10 +286,10 @@ async function notify(type) {
   const registration = await navigator.serviceWorker?.ready;
   if (!registration || !state.activeSession) return;
 
-  const title = type === "reflection" ? "Snabb reflektion" : "Dagens fokus";
+  const title = "Loopwise";
   const body = type === "reflection"
-    ? "Vad fungerade bra? Vad kan du göra annorlunda nästa gång?"
-    : `${state.activeSession.focus}\n\nSenaste justering: ${state.activeSession.lastAdjustment || "Ingen justering än."}`;
+    ? "Vad fungerade bra?\n\nVad kan du göra annorlunda nästa gång?"
+    : `${state.activeSession.focus}\n\n${state.activeSession.lastAdjustment || "Ingen senaste lärdom än."}`;
 
   await registration.showNotification(title, {
     body,
@@ -410,6 +415,16 @@ function getPushStatusText() {
 
 function updateConnectionStatus() {
   els.connectionStatus.textContent = navigator.onLine ? "Online" : "Offline";
+}
+
+function showPage(pageName) {
+  els.pages.forEach((page) => {
+    page.hidden = page.dataset.page !== pageName;
+    page.classList.toggle("active", page.dataset.page === pageName);
+  });
+  els.pageButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.pageButton === pageName);
+  });
 }
 
 function clampMinute(value) {

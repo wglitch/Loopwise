@@ -111,10 +111,10 @@ def upsert_subscription(subscription, schedule):
 
 def build_reminder_payload(schedule):
     return {
-        "title": "Dagens fokus",
+        "title": "Loopwise",
         "body": (
             f"{schedule.get('focus') or 'Kom ihåg dagens fokus.'}\n\n"
-            f"Senaste justering: {schedule.get('lastAdjustment') or 'Ingen justering än.'}"
+            f"{schedule.get('lastAdjustment') or 'Ingen senaste lärdom än.'}"
         ),
         "tag": "loopwise-reminder",
         "data": {"type": "reminder"},
@@ -123,8 +123,8 @@ def build_reminder_payload(schedule):
 
 def build_reflection_payload():
     return {
-        "title": "Snabb reflektion",
-        "body": "Vad fungerade bra? Vad kan du göra annorlunda nästa gång?",
+        "title": "Loopwise",
+        "body": "Vad fungerade bra?\n\nVad kan du göra annorlunda nästa gång?",
         "tag": "loopwise-reflection",
         "data": {"type": "reflection"},
     }

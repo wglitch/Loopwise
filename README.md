@@ -14,12 +14,13 @@ Första MVP under aktiv utveckling.
 
 Fungerar:
 - Starta och avsluta en session.
-- Spara fokus, kategori, påminnelseschema och reflektionsschema lokalt.
+- Spara fokus, påminnelseschema och reflektionsschema lokalt.
 - Svara på korta reflektioner.
 - Göra senaste "nästa gång"-svaret till nästa justering.
 - Visa lärdomsarkiv.
+- Hålla session, arkiv och inställningar i separata vyer.
 - Registrera PWA och service worker.
-- Förbereda Web Push-prenumeration mot enkel Node-server.
+- Skicka Web Push via enkel Python-server.
 
 Saknas:
 - Produktionskonfiguration för HTTPS-domän.
@@ -33,7 +34,7 @@ Saknas:
 - JavaScript
 - IndexedDB
 - Service worker
-- Web Push via minimal Node-server
+- Web Push via minimal Python-server
 
 ## Struktur
 
@@ -42,7 +43,8 @@ Saknas:
 - `app.js` - sessioner, IndexedDB och klientlogik.
 - `sw.js` - cache och push-hantering.
 - `manifest.webmanifest` - PWA-manifest.
-- `server.js` - enkel Web Push-server.
+- `server.py` - statisk webbserver och Web Push-server.
+- `start_loopwise.ps1` - startscript för garageserver-hubben.
 - `assets/` - ikoner och statiska resurser.
 
 ## Köra lokalt

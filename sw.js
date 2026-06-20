@@ -1,4 +1,4 @@
-const CACHE_NAME = "loopwise-v3";
+const CACHE_NAME = "loopwise-v4";
 const APP_SHELL = [
   ".",
   "index.html",
@@ -46,14 +46,19 @@ self.addEventListener("push", (event) => {
     body: "Dags att återvända till din loop."
   };
   const payload = event.data ? event.data.json() : fallback;
-
-  event.waitUntil(self.registration.showNotification(payload.title || fallback.title, {
-    body: payload.body || fallback.body,
+  const options = {
     tag: payload.tag || "loopwise",
     icon: "assets/icon-192.png",
     badge: "assets/icon-192.png",
     data: payload.data || {}
-  }));
+  };
+  if (Object.prototype.hasOwnProperty.call(payload, "body") && payload.body) {
+    options.body = payload.body;
+  } else if (!Object.prototype.hasOwnProperty.call(payload, "body")) {
+    options.body = fallback.body;
+  }
+
+  event.waitUntil(self.registration.showNotification(payload.title || fallback.title, options));
 });
 
 self.addEventListener("notificationclick", (event) => {
@@ -61,8 +66,11 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
       const existing = clients.find((client) => "focus" in client);
-      if (existing) return existing.focus();
-      return self.clients.openWindow(".");
+      if (existing) {
+        existing.postMessage({ type: "open-reflection" });
+        return existing.focus();
+      }
+      return self.clients.openWindow(".?reflect=1");
     })
   );
 });

@@ -6,6 +6,7 @@ const state = {
   db: null,
   activeSession: null,
   lessons: [],
+  pushSubscription: null,
   settings: {
     pushServerUrl: DEFAULT_PUSH_SERVER
   },
@@ -28,6 +29,7 @@ const els = {
   endSessionButton: document.querySelector("#endSessionButton"),
   reflectNowButton: document.querySelector("#reflectNowButton"),
   remindNowButton: document.querySelector("#remindNowButton"),
+  skipReflectionButton: document.querySelector("#skipReflectionButton"),
   enablePushButton: document.querySelector("#enablePushButton"),
   testPushButton: document.querySelector("#testPushButton"),
   pushServerInput: document.querySelector("#pushServerInput"),
@@ -47,10 +49,14 @@ async function init() {
     state.settings.pushServerUrl = DEFAULT_PUSH_SERVER;
   }
   els.pushServerInput.value = state.settings.pushServerUrl || "";
+  state.pushSubscription = await getSetting("pushSubscription");
   state.activeSession = await getActiveSession();
   state.lessons = await getAll("lessons");
   render();
   bindEvents();
+  if (new URLSearchParams(window.location.search).get("reflect") === "1") {
+    window.setTimeout(showReflection, 150);
+  }
   scheduleTick();
   updateConnectionStatus();
   window.addEventListener("online", updateConnectionStatus);
@@ -66,12 +72,18 @@ function bindEvents() {
     els.endPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   els.reflectNowButton.addEventListener("click", showReflection);
+  els.skipReflectionButton.addEventListener("click", hideReflection);
   els.remindNowButton.addEventListener("click", () => notify("reminder"));
   els.enablePushButton.addEventListener("click", enablePush);
   els.testPushButton.addEventListener("click", sendTestPush);
   els.pushServerInput.addEventListener("change", savePushServer);
   els.pageButtons.forEach((button) => {
     button.addEventListener("click", () => showPage(button.dataset.pageButton));
+  });
+  navigator.serviceWorker?.addEventListener("message", (event) => {
+    if (event.data?.type === "open-reflection") {
+      showReflection();
+    }
   });
 }
 
@@ -158,23 +170,39 @@ async function startSession(event) {
   document.querySelector("#reflectionMinute").value = session.reflectionMinute;
   render();
   showPage("session");
-  await syncPushSchedule();
-  toast("Session startad.");
+  const pushState = await syncPushSchedule();
+  if (pushState === "active") {
+    toast("Session startad. Push är aktivt.");
+  } else if (pushState === "error") {
+    toast("Session startad. Push kunde inte synkas.");
+  } else {
+    toast("Session startad. Aktivera push i Inställningar.");
+  }
 }
 
 async function saveReflection(event) {
   event.preventDefault();
   if (!state.activeSession) return;
 
+  const worked = document.querySelector("#workedInput").value.trim();
+  const different = document.querySelector("#differentInput").value.trim();
+  if (!worked && !different) {
+    hideReflection();
+    toast("Reflektion hoppades över.");
+    return;
+  }
+
   const reflection = {
     id: crypto.randomUUID(),
     sessionId: state.activeSession.id,
-    worked: document.querySelector("#workedInput").value.trim(),
-    different: document.querySelector("#differentInput").value.trim(),
+    worked,
+    different,
     createdAt: new Date().toISOString()
   };
 
-  state.activeSession.lastAdjustment = reflection.different;
+  if (reflection.different) {
+    state.activeSession.lastAdjustment = reflection.different;
+  }
   await put("reflections", reflection);
   await put("sessions", state.activeSession);
   els.reflectionForm.reset();
@@ -218,13 +246,16 @@ function render() {
 
   if (hasSession) {
     els.activeFocus.textContent = state.activeSession.focus;
-    els.activeAdjustment.textContent = state.activeSession.lastAdjustment || "Ingen lärdom än.";
+    const hasAdjustment = Boolean(state.activeSession.lastAdjustment);
+    document.querySelector(".adjustment-label").hidden = !hasAdjustment;
+    els.activeAdjustment.hidden = !hasAdjustment;
+    els.activeAdjustment.textContent = state.activeSession.lastAdjustment || "";
   }
 
   const lessons = [...state.lessons].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   els.lessonList.innerHTML = lessons.length
     ? lessons.map(renderLesson).join("")
-    : "<li><time>Ingen lärdom sparad än</time><span>Avsluta en session för att bygga arkivet.</span></li>";
+    : "";
 
   els.pushStatus.textContent = getPushStatusText();
 }
@@ -240,9 +271,15 @@ function renderLesson(lesson) {
 
 function showReflection() {
   if (!state.activeSession) return;
+  showPage("session");
   els.reflectionPanel.hidden = false;
   els.reflectionPanel.scrollIntoView({ behavior: "smooth", block: "start" });
   document.querySelector("#workedInput").focus();
+}
+
+function hideReflection() {
+  els.reflectionForm.reset();
+  els.reflectionPanel.hidden = true;
 }
 
 function scheduleTick() {
@@ -286,13 +323,13 @@ async function notify(type) {
   const registration = await navigator.serviceWorker?.ready;
   if (!registration || !state.activeSession) return;
 
-  const title = "Loopwise";
+  const title = type === "reflection" ? "Reflektion" : state.activeSession.focus;
   const body = type === "reflection"
     ? "Vad fungerade bra?\n\nVad kan du göra annorlunda nästa gång?"
-    : `${state.activeSession.focus}\n\n${state.activeSession.lastAdjustment || "Ingen senaste lärdom än."}`;
+    : state.activeSession.lastAdjustment;
 
   await registration.showNotification(title, {
-    body,
+    body: body || undefined,
     tag: `loopwise-${type}`,
     icon: "assets/icon-192.png",
     badge: "assets/icon-192.png",
@@ -348,7 +385,8 @@ async function enablePush() {
       subscription,
       schedule: buildSchedulePayload()
     });
-    await setSetting("pushSubscription", subscription.toJSON());
+    state.pushSubscription = subscription.toJSON();
+    await setSetting("pushSubscription", state.pushSubscription);
     render();
     toast("Push är aktiverat.");
   } catch (error) {
@@ -374,15 +412,17 @@ async function sendTestPush() {
 
 async function syncPushSchedule() {
   const serverUrl = state.settings.pushServerUrl;
-  const subscription = await getSetting("pushSubscription");
-  if (!serverUrl || !subscription) return;
+  const subscription = state.pushSubscription || await getSetting("pushSubscription");
+  if (!serverUrl || !subscription) return "inactive";
   try {
     await fetchJson(`${serverUrl}/schedule`, {
       subscription,
       schedule: buildSchedulePayload()
     });
+    return "active";
   } catch (error) {
     console.warn("Kunde inte synka pushschema.", error);
+    return "error";
   }
 }
 
@@ -410,7 +450,8 @@ async function fetchJson(url, payload) {
 
 function getPushStatusText() {
   if (!state.settings.pushServerUrl) return "Ange en HTTPS-adress till pushservern.";
-  return `Pushserver: ${state.settings.pushServerUrl}`;
+  if (state.pushSubscription) return `Push är aktiverat via ${state.settings.pushServerUrl}`;
+  return `Push är inte aktiverat. Server: ${state.settings.pushServerUrl}`;
 }
 
 function updateConnectionStatus() {

@@ -33,7 +33,7 @@
           <p class="section-kicker">Aktiv session</p>
           <h2 id="activeFocus">Dagens fokus</h2>
           <p class="adjustment-label">Senaste lärdomen</p>
-          <p class="adjustment-text" id="activeAdjustment">Ingen lärdom än.</p>
+          <p class="adjustment-text" id="activeAdjustment"></p>
           <div class="quick-actions">
             <button class="secondary" id="reflectNowButton" type="button">Reflektera</button>
             <button class="secondary" id="remindNowButton" type="button">Påminn</button>
@@ -68,13 +68,16 @@
             <p class="section-kicker">Snabb reflektion</p>
             <div class="field">
               <label for="workedInput">Vad fungerade bra?</label>
-              <textarea id="workedInput" rows="3" maxlength="220" required></textarea>
+              <textarea id="workedInput" rows="3" maxlength="220"></textarea>
             </div>
             <div class="field">
               <label for="differentInput">Vad kan jag göra annorlunda nästa gång?</label>
-              <textarea id="differentInput" rows="3" maxlength="220" required></textarea>
+              <textarea id="differentInput" rows="3" maxlength="220"></textarea>
             </div>
-            <button class="primary" type="submit">Spara lärdom</button>
+            <div class="quick-actions">
+              <button class="secondary" id="skipReflectionButton" type="button">Hoppa över</button>
+              <button class="primary compact-primary" type="submit">Spara lärdom</button>
+            </div>
           </form>
         </section>
 

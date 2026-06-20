@@ -216,6 +216,10 @@ textarea {
   color: #ffffff;
 }
 
+.compact-primary {
+  margin-top: 0;
+}
+
 .primary:active,
 .secondary:active,
 .text-button:active {
